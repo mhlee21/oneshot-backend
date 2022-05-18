@@ -48,7 +48,10 @@ INSTALLED_APPS = [
     'dj_rest_auth.registration',
     'allauth',
     'allauth.account',
-    'allauth.socialaccount',
+    'allauth.socialaccount', # OAuth
+    'allauth.socialaccount.providers.google',
+    'allauth.socialaccount.providers.naver',
+    'allauth.socialaccount.providers.kakao',
 
     # CORS 세팅
     'corsheaders',
@@ -66,7 +69,16 @@ INSTALLED_APPS = [
     'drf_yasg',
 ]
 
+# 'django.contrib.sites' 사용 시 반드시 설정 필요
 SITE_ID = 1
+
+AUTHENTICATION_BACKENDS = [
+    # Needed to login by username in Django admin, regardless of `allauth`
+    'django.contrib.auth.backends.ModelBackend',
+
+    # `allauth` specific authentication methods, such as login by e-mail
+    'allauth.account.auth_backends.AuthenticationBackend',
+]
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware', # CommonMiddleware 보다 위에 위치해야 함
