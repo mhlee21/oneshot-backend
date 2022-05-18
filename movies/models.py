@@ -1,4 +1,5 @@
 from django.db import models
+from django.conf import settings
 
 class Genre(models.Model):
     name = models.CharField(max_length=100)
@@ -12,6 +13,9 @@ class Video(models.Model):
     size = models.IntegerField()
     type = models.CharField(max_length=20)
     official = models.BooleanField()
+
+    def __str__(self):
+        return self.key
     
 
 class Movie(models.Model):
@@ -30,3 +34,14 @@ class Movie(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class MovieComment(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    movie = models.ForeignKey(Movie, on_delete=models.CASCADE, related_name='comments')
+
+    def __str__(self):
+        return self.user

@@ -13,6 +13,6 @@ schema_view = get_schema_view(
 )
 
 urlpatterns = [
-    path('movie/popular/', views.movie_popular),
+    path('popular/', views.movie_popular),
     path('swagger/', schema_view.with_ui('redoc')),
 ]
