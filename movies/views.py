@@ -1,4 +1,3 @@
-from django.shortcuts import render
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from .models import Movie
@@ -13,9 +12,10 @@ from .models import Movie
 @api_view(['GET'])
 def movie_popular(request):
     '''
-    인기 영화 상위 10개를 리턴하는 API
+    movie_popular
 
     ---
+    인기 영화 상위 10개를 리턴하는 API
     - order_by('-popularity')
     '''
     movies = list(Movie.objects.all().order_by('-popularity')[:10].values())
