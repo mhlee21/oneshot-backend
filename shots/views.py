@@ -69,3 +69,4 @@ def shot_detail_or_update_or_delete(request, movie_id, shot_id):
         return shot_update()
     elif request.method == 'DELETE':
         return shot_delete()
+
