@@ -50,6 +50,9 @@ INSTALLED_APPS = [
     'allauth.account',
     'allauth.socialaccount',
 
+    # CORS 세팅
+    'corsheaders',
+
     # native apps
     'django.contrib.admin',
     'django.contrib.auth',
@@ -66,6 +69,7 @@ INSTALLED_APPS = [
 SITE_ID = 1
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware', # CommonMiddleware 보다 위에 위치해야 함
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -149,6 +153,15 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_USER_MODEL = 'accounts.User'
+
+# 특정 origin 에게만 교차 출처 허용
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:8000",
+    "http://127.0.0.1:9000",
+]
+
+# 모두에게 교차출처 허용 (*)
+# CORS_ALLOW_ALL_ORIGINS = True
 
 # DRF 인증 관련 설정
 REST_FRAMEWORK = {
