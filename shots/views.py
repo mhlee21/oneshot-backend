@@ -1,3 +1,4 @@
+from xml.etree.ElementTree import Comment
 from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.response import Response
@@ -5,46 +6,57 @@ from rest_framework.decorators import api_view
 from .models import Shot, ShotComment
 from movies.models import Movie
 from .serializers.shot import ShotSerializer, ShotListSerializer
+from .serializers.shot_comment import ShotCommentSerializer
 
-@api_view(['GET'])
+@api_view(['GET', 'POST'])
 def shots(request):
     '''
     shots
 
     ---
-    모든 shot 를 리턴하는 API
-    '''
-    shots = Shot.objects.all().order_by('-pk')
-    serializer = ShotListSerializer(shots, many=True)
-    return Response(serializer.data)
+    [GET] get shots
 
-
-@api_view(['POST'])
-def shot_create(request, movie_id):
+    [POST] create shots
+    * title
+    * content
+    * movie_char
+    * image
     '''
-    shot_create
+    def shot_list():
+        shots = Shot.objects.all().order_by('-pk')
+        serializer = ShotListSerializer(shots, many=True)
+        return Response(serializer.data)
 
-    ---
-    shot 생성 API
-    '''
-    movie = get_object_or_404(Movie, pk=movie_id)
-    serializer = ShotSerializer(data=request.data)
-    if serializer.is_valid(raise_exception=True):
-        serializer.save(user=request.user, movie=movie)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    def shot_create():
+        serializer = ShotSerializer(data=request.data)
+        if serializer.is_valid(raise_exception=True):
+            serializer.save(user=request.user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    if request.method == 'GET':
+        return shot_list()
+    elif request.method == 'POST':
+        return shot_create()
 
 
 @api_view(['GET', 'PUT', 'DELETE'])
-def shot_detail_or_update_or_delete(request, movie_id, shot_id):
+def shot_detail_or_update_or_delete(request, shot_id):
     '''
     shot_detail_or_update_or_delete
 
     ---
+    [GET] 
+
     [PUT] 
-    - movie_id 바꿔서 넣어주는 것 금지! 
-    - shot 의 movie 정보 바꾸고 싶으면 삭제 후 shot 재생성을 권장합니다.
+    - title
+    - content
+    - image
+
+    [DELETE]
+    - title
+    -content
+    - image (수정시에도 image 넣어줘야함) 
     '''
-    movie = get_object_or_404(Movie, pk=movie_id)
     shot = get_object_or_404(Shot, pk=shot_id)
 
     def shot_detail():
@@ -55,7 +67,7 @@ def shot_detail_or_update_or_delete(request, movie_id, shot_id):
         if request.user == shot.user:
             serializer = ShotSerializer(instance=shot, data=request.data)
             if serializer.is_valid(raise_exception=True):
-                serializer.save(movie=movie)
+                serializer.save()
                 return Response(serializer.data)
 
     def shot_delete():
@@ -70,3 +82,71 @@ def shot_detail_or_update_or_delete(request, movie_id, shot_id):
     elif request.method == 'DELETE':
         return shot_delete()
 
+
+@api_view(['POST'])
+def likes(request, shot_id):
+    '''
+    likes
+
+    ---
+    [POST]
+
+    return { "is_like": true, "like_cnt": 1 }
+    '''
+    shot = get_object_or_404(Shot, pk=shot_id)
+    if shot.like_users.filter(pk=request.user.pk).exists():
+        shot.like_users.remove(request.user)
+        is_like = False
+    else:
+        shot.like_users.add(request.user)
+        is_like = True
+    data = {
+        'is_like': is_like,
+        'like_cnt': shot.like_users.count()
+    }
+    return Response(data)
+
+
+@api_view(['POST'])
+def comment_create(request, shot_id):
+    '''
+    comment_create
+
+    ---
+    [POST]
+    * content
+    '''
+    shot = get_object_or_404(Shot, pk=shot_id)
+    serializer = ShotCommentSerializer(data=request.data)
+    if serializer.is_valid(raise_exception=True):
+        serializer.save(shot=shot, user=request.user)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+@api_view(['PUT', 'DELETE'])
+def comment_update_or_delete(request, shot_id, comment_id):
+    '''
+    comment_update_or_delete
+
+    ---
+    [PUT]
+    * content
+
+    [DELETE]
+    '''
+    comment = get_object_or_404(ShotComment, pk=comment_id)
+    
+    def comment_update():
+        serializer = ShotCommentSerializer(comment, request.data)
+        if serializer.is_valid(raise_exception=True):
+            serializer.save()
+            return Response(serializer.data)
+
+    def comment_delete():
+        comment.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    if request.method == 'PUT':
+        return comment_update()
+    elif request.method == 'DELETE':
+        return comment_delete()

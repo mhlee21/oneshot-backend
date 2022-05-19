@@ -25,15 +25,19 @@ class ShotSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
     movie = MovieSerializer(read_only=True)
     comments = ShotCommentSerializer(many=True, read_only=True)
-    like_users = UserSerializer(read_only=True, many=True)
+    like_users = UserSerializer(many=True, read_only=True)
+    like_cnt = serializers.IntegerField(source='like_users.count', read_only=True)
+    image = serializers.ImageField(use_url=True)
     
     class Meta:
         model = Shot
-        fields = ('pk', 'user', 'movie', 'title', 'content', 'comments', 'like_users')
+        fields = '__all__'
 
 class ShotListSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
     movie = MovieSerializer(read_only=True)
+    like_users = UserSerializer(many=True, read_only=True)
+    like_cnt = serializers.IntegerField(source='like_users.count', read_only=True)
     
     class Meta:
         model = Shot
