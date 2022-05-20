@@ -1,3 +1,4 @@
+from turtle import ondrag
 from django.db import models
 from django.conf import settings
 
@@ -31,17 +32,29 @@ class Movie(models.Model):
     # runtime = models.IntegerField()
     vote_average = models.FloatField()
     vote_count = models.IntegerField()
+    like_users = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='like_movies')
 
     def __str__(self):
         return self.title
 
 
+class StarRating(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    movie = models.ForeignKey(Movie, on_delete=models.CASCADE, related_name='stars')
+    star = models.FloatField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.user
+
+
 class MovieComment(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    movie = models.ForeignKey(Movie, on_delete=models.CASCADE, related_name='comments')
     content = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    movie = models.ForeignKey(Movie, on_delete=models.CASCADE, related_name='comments')
 
     def __str__(self):
         return self.user

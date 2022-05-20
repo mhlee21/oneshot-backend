@@ -85,9 +85,9 @@ def shot_detail_or_update_or_delete(request, shot_id):
 
 
 @api_view(['POST'])
-def likes(request, shot_id):
+def shot_likes(request, shot_id):
     '''
-    likes
+    shot_likes
 
     ---
     [POST]
@@ -109,9 +109,9 @@ def likes(request, shot_id):
 
 
 @api_view(['POST'])
-def comment_create(request, shot_id):
+def shot_comment_create(request, shot_id):
     '''
-    comment_create
+    shot_comment_create
 
     ---
     [POST]
@@ -125,9 +125,9 @@ def comment_create(request, shot_id):
 
 
 @api_view(['PUT', 'DELETE'])
-def comment_update_or_delete(request, shot_id, comment_id):
+def shot_comment_update_or_delete(request, shot_id, comment_id):
     '''
-    comment_update_or_delete
+    shot_comment_update_or_delete
 
     ---
     [PUT]
