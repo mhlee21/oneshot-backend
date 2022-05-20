@@ -9,35 +9,43 @@ from .serializers.shot import ShotSerializer, ShotListSerializer
 from .serializers.shot_comment import ShotCommentSerializer
 from django.db.models import Count
 
-@api_view(['GET', 'POST'])
-def shots(request):
+
+@api_view(['POST'])
+def shot_create(request, page):
     '''
-    shots
+    shot_create
 
     ---
-    [GET] get shots
-
     [POST] create shots
     * title
     * content
     * movie_char
     * image
     '''
-    def shot_list():
-        shots = Shot.objects.all().annotate(like_cnt=Count('like_users')).order_by('-like_cnt', '-pk')
-        serializer = ShotListSerializer(shots, many=True)
-        return Response(serializer.data)
+    serializer = ShotSerializer(data=request.data)
+    if serializer.is_valid(raise_exception=True):
+        serializer.save(user=request.user)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-    def shot_create():
-        serializer = ShotSerializer(data=request.data)
-        if serializer.is_valid(raise_exception=True):
-            serializer.save(user=request.user)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-    if request.method == 'GET':
-        return shot_list()
-    elif request.method == 'POST':
-        return shot_create()
+@api_view(['GET'])
+def shots(request, page):
+    '''
+    shots
+
+    ---
+    [GET] get shots
+    '''
+    shots = Shot.objects.all().annotate(like_cnt=Count('like_users')).order_by('-like_cnt', '-pk')
+    max_page = round(len(shots)/20)
+
+    shots = shots[page*20:page*20+20]
+    serializer = ShotListSerializer(shots, many=True)
+    data = {
+        "max_page"  : max_page, 
+        "shots"    : serializer.data,
+    }
+    return Response(data)
 
 
 @api_view(['GET', 'PUT', 'DELETE'])
