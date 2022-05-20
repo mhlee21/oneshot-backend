@@ -36,7 +36,7 @@ def shots(request, page):
     ---
     [GET] get shots
     '''
-    shots = Shot.objects.all().annotate(like_cnt=Count('like_users')).order_by('-like_cnt', '-pk')
+    shots = Shot.objects.all().annotate(like_cnt=Count('like_users')).order_by('-pk')
     max_page = round(len(shots)/20)
 
     shots = shots[page*20:page*20+20]
