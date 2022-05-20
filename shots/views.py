@@ -7,6 +7,7 @@ from .models import Shot, ShotComment
 from movies.models import Movie
 from .serializers.shot import ShotSerializer, ShotListSerializer
 from .serializers.shot_comment import ShotCommentSerializer
+from django.db.models import Count
 
 @api_view(['GET', 'POST'])
 def shots(request):
@@ -23,7 +24,7 @@ def shots(request):
     * image
     '''
     def shot_list():
-        shots = Shot.objects.all().order_by('-pk')
+        shots = Shot.objects.all().annotate(like_cnt=Count('like_users')).order_by('-like_cnt', '-pk')
         serializer = ShotListSerializer(shots, many=True)
         return Response(serializer.data)
 
