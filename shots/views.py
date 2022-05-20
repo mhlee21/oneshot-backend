@@ -11,7 +11,7 @@ from django.db.models import Count
 
 
 @api_view(['POST'])
-def shot_create(request, page):
+def shot_create(request):
     '''
     shot_create
 
