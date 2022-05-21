@@ -158,7 +158,7 @@ def shot_comment_update_or_delete(request, shot_id, comment_id):
         comment.delete()
         shot = get_object_or_404(Shot, pk=shot_id)
         res = ShotSerializer(shot)
-        return Response(res.data['comments'],status=status.HTTP_204_NO_CONTENT)
+        return Response(res.data['comments'])
 
     if request.method == 'PUT':
         return comment_update()
