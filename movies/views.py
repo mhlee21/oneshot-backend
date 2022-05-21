@@ -109,11 +109,11 @@ def movie_detail(request, movie_id):
 
     # 영화 포스터/트레일러 url
     url_path = ''
-    if movie.video:
+    if movie.video.values():
         key = list(movie.video.values())[0]['key']
         url_path = f'https://www.youtube.com/embed/{key}'
     else:
-        url_path = f'https://image.tmdb.org/t/p/original/{movie.poster_path}'
+        url_path = f'https://image.tmdb.org/t/p/original{movie.poster_path}'
     
     serializer = MovieSerializer(movie)
     data = {
