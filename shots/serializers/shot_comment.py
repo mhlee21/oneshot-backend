@@ -16,5 +16,5 @@ class ShotCommentSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = ShotComment
-        fields = ('pk', 'user', 'content', 'shot',)
+        fields = '__all__'
         read_only_fields = ('shot',)
