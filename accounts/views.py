@@ -2,9 +2,9 @@ from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from .serializers import ProfileSerializer
+from rest_framework import status
+from .serializers import ProfileSerializer, UserSerializer
 from .models import User
-
 
 User = get_user_model()
 
@@ -13,3 +13,30 @@ def profile(request, username):
     user = get_object_or_404(User, username=username)
     serializer = ProfileSerializer(user)
     return Response(serializer.data)
+
+
+@api_view(['POST'])
+def follow(request, user_id):
+    you = get_object_or_404(get_user_model(), pk=user_id)
+    me = request.user
+
+    if me != you:
+        if you.followers.filter(pk=me.pk).exists():
+            # 언팔로우
+            is_follow = False
+            you.followers.remove(me)
+        else:
+            # 팔로우
+            is_follow = True
+            you.followers.add(me)
+        user = ProfileSerializer(you)
+        data = {
+            'is_Follow' : is_follow,
+            'user' : user.data,
+        }
+        return Response(data)
+    else:
+        data = {
+            'detail': '자기 자신을 팔로우 할 수 없습니다.'
+        }
+        return Response(data)

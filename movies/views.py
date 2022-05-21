@@ -158,7 +158,8 @@ def movie_comment_create(request, movie_id):
     serializer = MovieCommentSerializer(data=request.data)
     if serializer.is_valid(raise_exception=True):
         serializer.save(movie=movie, user=request.user)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        res = MovieSerializer(movie)
+        return Response(res.data['comments'], status=status.HTTP_201_CREATED)
 
 
 @api_view(['PUT', 'DELETE'])
@@ -179,11 +180,15 @@ def movie_update_or_delete(request, movie_id, comment_id):
         serializer = MovieCommentSerializer(comment, request.data)
         if serializer.is_valid(raise_exception=True):
             serializer.save()
-            return Response(serializer.data)
+            movie = get_object_or_404(Movie, pk=movie_id)
+            res = MovieSerializer(movie)
+            return Response(res.data['comments'])
 
     def comment_delete():
         comment.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        movie = get_object_or_404(Movie, pk=movie_id)
+        res = MovieSerializer(movie)
+        return Response(res.data['comments'])
 
     if request.method == 'PUT':
         return comment_update()
