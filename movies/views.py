@@ -23,12 +23,8 @@ def movie_trailer(request):
     ---
     최신 상영작 중 랜덤한 movie_trailer 를 리턴하는 API
     '''
-    # movies = Movie.objects.all() \
-    #             .annotate(video_cnt=Count('video')) \
-    #             .order_by('-release_date','-video_cnt')[:20]
     movies = Movie.objects.all().order_by('-release_date')[:20]
     serializer = MovieSerializer(movies, many=True)
-    # movies = serializers.data
     movies = []
     for movie in serializer.data:
         if movie['video']: # 비디오 정보가 있는 경우 리스트에 video key 값을 append
