@@ -55,7 +55,7 @@ def movie_popular(request, page):
     # movies = list(Movie.objects.all().order_by('-popularity')[:20].values())
     movies = Movie.objects.all().order_by('-popularity')
     max_page = round(len(movies)/MOVIE_NUM)
-
+    page -= 1
     movies = movies[page*MOVIE_NUM:page*MOVIE_NUM+MOVIE_NUM]
     serializer = MovieListSerializer(movies, many=True)
     data = {
@@ -80,7 +80,7 @@ def now_playing(request, page):
     '''
     movies = Movie.objects.all().order_by('-release_date')
     max_page = round(len(movies)/MOVIE_NUM)
-
+    page -= 1
     movies = movies[page*MOVIE_NUM:page*MOVIE_NUM+MOVIE_NUM]
     serializer = MovieListSerializer(movies, many=True)
     data = {

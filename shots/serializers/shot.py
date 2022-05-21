@@ -37,6 +37,7 @@ class ShotSerializer(serializers.ModelSerializer):
 class ShotListSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
     movie = MovieSerializer(read_only=True)
+    comments_cnt = serializers.IntegerField(source='comments.count', read_only=True)
     like_users = UserSerializer(many=True, read_only=True)
     like_cnt = serializers.IntegerField(source='like_users.count', read_only=True)
     
