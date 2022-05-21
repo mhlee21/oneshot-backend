@@ -102,12 +102,22 @@ def movie_detail(request, movie_id):
     '''
     movie = get_object_or_404(Movie, pk=movie_id)
 
+    # 별점 정보
     stars = ''
     if movie.stars.filter(user=request.user).exists():
         stars = list(movie.stars.values())[0]
+
+    # 영화 포스터/트레일러 url
+    url_path = ''
+    if movie.video:
+        key = list(movie.video.values())[0]['key']
+        url_path = f'https://www.youtube.com/embed/{key}'
+    else:
+        url_path = f'https://image.tmdb.org/t/p/original/{movie.poster_path}'
     
     serializer = MovieSerializer(movie)
     data = {
+        "url_path" : url_path,
         "stars" : stars,
         "movie" : serializer.data,
     }

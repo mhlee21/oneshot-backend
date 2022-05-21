@@ -129,7 +129,8 @@ def shot_comment_create(request, shot_id):
     serializer = ShotCommentSerializer(data=request.data)
     if serializer.is_valid(raise_exception=True):
         serializer.save(shot=shot, user=request.user)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        res = ShotSerializer(shot)
+        return Response(res.data['comments'], status=status.HTTP_201_CREATED)
 
 
 @api_view(['PUT', 'DELETE'])
@@ -149,11 +150,15 @@ def shot_comment_update_or_delete(request, shot_id, comment_id):
         serializer = ShotCommentSerializer(comment, request.data)
         if serializer.is_valid(raise_exception=True):
             serializer.save()
-            return Response(serializer.data)
+            shot = get_object_or_404(Shot, pk=shot_id)
+            res = ShotSerializer(shot)
+            return Response(res.data['comments'])
 
     def comment_delete():
         comment.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        shot = get_object_or_404(Shot, pk=shot_id)
+        res = ShotSerializer(shot)
+        return Response(res.data['comments'],status=status.HTTP_204_NO_CONTENT)
 
     if request.method == 'PUT':
         return comment_update()
