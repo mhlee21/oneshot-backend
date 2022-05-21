@@ -40,10 +40,14 @@ def shots(request, page):
     max_page = round(len(shots)/20)
     
     shots = shots[page*20:page*20+20]
+    
+    is_liked = [shot.like_users.filter(pk=request.user.pk).exists() for shot in shots]
+        
     serializer = ShotListSerializer(shots, many=True)
     data = {
         "max_page"  : max_page, 
         "shots"    : serializer.data,
+        "is_liked" : is_liked,
     }
     return Response(data)
 
