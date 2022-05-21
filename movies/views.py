@@ -27,15 +27,17 @@ def movie_trailer(request):
     #             .annotate(video_cnt=Count('video')) \
     #             .order_by('-release_date','-video_cnt')[:20]
     movies = Movie.objects.all().order_by('-release_date')[:20]
-    serializers = MovieSerializer(movies, many=True)
-    movies = serializers.data
-    video_urls = []
-    for movie in movies:
+    serializer = MovieSerializer(movies, many=True)
+    # movies = serializers.data
+    movies = []
+    for movie in serializer.data:
         if movie['video']: # 비디오 정보가 있는 경우 리스트에 video key 값을 append
-            for video in movie['video']:
-                video_urls.append(video['key'])
+            movies.append(movie)
+    movie = random.sample(movies,1)[0]
+    trailer = 'https://www.youtube.com/embed/' + movie['video'][0]['key']
     data = {
-        'trailer' : 'https://www.youtube.com/embed/' + random.sample(video_urls,1)[0]
+        'movie': movie,
+        'trailer' : trailer,
     }
     return Response(data)
 
