@@ -38,7 +38,7 @@ def shots(request, page):
     '''
     shots = Shot.objects.all().annotate(like_cnt=Count('like_users')).order_by('-pk')
     max_page = round(len(shots)/20)
-    page -= 1
+    
     shots = shots[page*20:page*20+20]
     serializer = ShotListSerializer(shots, many=True)
     data = {
