@@ -12,7 +12,8 @@ import random
 # python manage.py migrate 후 다음 함수 실행되어야 에러가 나지 않는다.
 # from . import dump_movie_data
 # dump_movie_data.get_movie_data()
-    
+
+MOVIE_NUM = 10
 
 @api_view(['GET'])
 def movie_trailer(request):
@@ -53,12 +54,13 @@ def movie_popular(request, page):
     '''
     # movies = list(Movie.objects.all().order_by('-popularity')[:20].values())
     movies = Movie.objects.all().order_by('-popularity')
-    max_page = round(len(movies)/20)
+    max_page = round(len(movies)/MOVIE_NUM)
 
-    movies = movies[page*20:page*20+20]
+    movies = movies[page*MOVIE_NUM:page*MOVIE_NUM+MOVIE_NUM]
     serializer = MovieListSerializer(movies, many=True)
     data = {
-        "max_page"  : max_page, 
+        "max_page"  : max_page,
+        "movie_cnt" : MOVIE_NUM,
         "movies"    : serializer.data,
     }
     return Response(data)
@@ -77,12 +79,13 @@ def now_playing(request, page):
     max_page를 넘어가는 값을 page 로 주면 빈 리스트를 반환합니다.
     '''
     movies = Movie.objects.all().order_by('-release_date')
-    max_page = round(len(movies)/20)
+    max_page = round(len(movies)/MOVIE_NUM)
 
-    movies = movies[page*20:page*20+20]
+    movies = movies[page*MOVIE_NUM:page*MOVIE_NUM+MOVIE_NUM]
     serializer = MovieListSerializer(movies, many=True)
     data = {
         "max_page"  : max_page, 
+        "movie_cnt" : MOVIE_NUM,
         "movies"    : serializer.data,
     }
     return Response(data)
