@@ -131,6 +131,12 @@ def movie_detail(request, movie_id):
     if request.user.id:
         if movie.stars.filter(user=request.user).exists():
             stars = list(movie.stars.values())[0]
+    
+    # 좋아요 상태 리턴
+    is_liked = False
+    if request.user.id:
+        if movie.like_users.filter(pk=request.user.pk).exists():
+            is_liked = True
 
     # 영화 포스터/트레일러 url
     url_path = ''
@@ -143,6 +149,7 @@ def movie_detail(request, movie_id):
     serializer = MovieSerializer(movie)
     data = {
         "url_path" : url_path,
+        "is_liked" : is_liked,
         "stars" : stars,
         "movie" : serializer.data,
     }
@@ -161,13 +168,14 @@ def movie_likes(request, movie_id):
     movie = get_object_or_404(Movie, pk=movie_id)
     if movie.like_users.filter(pk=request.user.pk).exists():
         movie.like_users.remove(request.user)
-        is_like = False
+        is_liked = False
     else:
         movie.like_users.add(request.user)
-        is_like = True
+        is_liked = True
+    serializer = MovieSerializer(movie)
     data = {
-        'is_like': is_like,
-        'like_cnt': movie.like_users.count()
+        'is_liked': is_liked,
+        'movie': serializer.data
     }
     return Response(data)
 
