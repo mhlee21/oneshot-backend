@@ -1,20 +1,20 @@
 from django.shortcuts import get_list_or_404, get_object_or_404
 from rest_framework.response import Response
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from .serailizers import GenreSerializer, MovieListSerializer, MovieSerializer, MovieCommentSerializer, StarSerializer
 from .models import Movie, MovieComment, StarRating, Genre
 from django.db.models import Count
 import random
-
+import datetime as dt
 
 # TMDB 로부터 movie data 가져올 때 사용하는 함수
 # python manage.py migrate 후 다음 함수 실행되어야 에러가 나지 않는다.
 # from . import dump_movie_data
 # dump_movie_data.get_movie_data()
 
-MOVIE_NUM = 10
-
+MOVIE_NUM = 12
 
 @api_view(['GET'])
 def genre(request):
@@ -28,6 +28,7 @@ def genre(request):
     serializer = GenreSerializer(genres, many=True)
     return Response(serializer.data)
 
+
 @api_view(['GET'])
 def movie_trailer(request):
     '''
@@ -36,7 +37,11 @@ def movie_trailer(request):
     ---
     최신 상영작 중 랜덤한 movie_trailer 를 리턴하는 API
     '''
-    movies = Movie.objects.all().order_by('-release_date')[:20]
+    today = dt.datetime.now()
+    start = today - dt.timedelta(30)
+    end = today + dt.timedelta(30)
+    movies = Movie.objects.all().order_by('-release_date')\
+        .filter(release_date__range=(start, end))[:20]
     serializer = MovieSerializer(movies, many=True)
     movies = []
     for movie in serializer.data:
@@ -63,7 +68,6 @@ def movie_popular(request, page):
     
     max_page를 넘어가는 값을 page 로 주면 빈 리스트를 반환합니다.
     '''
-    # movies = list(Movie.objects.all().order_by('-popularity')[:20].values())
     movies = Movie.objects.all().order_by('-popularity')
     max_page = round(len(movies)/MOVIE_NUM)
 
@@ -89,7 +93,11 @@ def now_playing(request, page):
     
     max_page를 넘어가는 값을 page 로 주면 빈 리스트를 반환합니다.
     '''
-    movies = Movie.objects.all().order_by('-release_date')
+    today = dt.datetime.now()
+    start = today - dt.timedelta(30)
+    end = today + dt.timedelta(30)
+    movies = Movie.objects.all().order_by('-release_date')\
+        .filter(release_date__range=(start, end))
     max_page = round(len(movies)/MOVIE_NUM)
 
     movies = movies[page*MOVIE_NUM:page*MOVIE_NUM+MOVIE_NUM]
@@ -117,12 +125,16 @@ def movie_detail(request, movie_id):
 
     # 별점 정보
     stars = ''
-    if movie.stars.filter(user=request.user).exists():
-        stars = list(movie.stars.values())[0]
+    # AnonymousUser 에러 해결을 위해 
+    # request.user.id 값이 있는지 없는지를 검사
+    # AnonymousUser 일때 id 값이 None 이기 때문에 TypeError 발생
+    if request.user.id:
+        if movie.stars.filter(user=request.user).exists():
+            stars = list(movie.stars.values())[0]
 
     # 영화 포스터/트레일러 url
     url_path = ''
-    if movie.video.values():
+    if movie.video.values(): 
         key = list(movie.video.values())[0]['key']
         url_path = f'https://www.youtube.com/embed/{key}'
     else:
@@ -138,6 +150,7 @@ def movie_detail(request, movie_id):
 
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def movie_likes(request, movie_id):
     '''
     movie_likes
@@ -160,6 +173,7 @@ def movie_likes(request, movie_id):
 
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def movie_comment_create(request, movie_id):
     '''
     movie_comment_create
@@ -176,6 +190,7 @@ def movie_comment_create(request, movie_id):
 
 
 @api_view(['PUT', 'DELETE'])
+@permission_classes([IsAuthenticated])
 def movie_update_or_delete(request, movie_id, comment_id):
     '''
     movie_update_or_delete
@@ -210,6 +225,7 @@ def movie_update_or_delete(request, movie_id, comment_id):
 
 
 @api_view(['POST', 'DELETE'])
+@permission_classes([IsAuthenticated])
 def movie_star_rating(request, movie_id):
     '''
     movie_star_rating

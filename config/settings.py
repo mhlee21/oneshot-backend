@@ -184,7 +184,7 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.TokenAuthentication', # 인증하는데 Token을 사용
     ],
     'DEFAULT_PERMISSION_CLASSES': [
-        # 모두에게 허용
+        # 모두에게 허용 (인증 필요함 뷰함수만 따로 설정)
         'rest_framework.permissions.AllowAny', 
 
         # 인증된 사용자만 모든일이 가능 / 비인증 사용자는 모두 401 Unauthorized

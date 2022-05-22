@@ -2,7 +2,8 @@ from xml.etree.ElementTree import Comment
 from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.response import Response
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
 from .models import Shot, ShotComment
 from movies.models import Movie
 from .serializers.shot import ShotSerializer, ShotListSerializer
@@ -11,6 +12,7 @@ from django.db.models import Count
 
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def shot_create(request):
     '''
     shot_create
@@ -41,7 +43,12 @@ def shots(request, page):
     
     shots = shots[page*20:page*20+20]
     
-    is_liked = [shot.like_users.filter(pk=request.user.pk).exists() for shot in shots]
+    is_liked = [False * len(shots)]
+    # AnonymousUser 에러 해결을 위해 
+    # request.user.id 값이 있는지 없는지를 검사
+    # AnonymousUser 일때 id 값이 None 이기 때문에 TypeError 발생
+    if request.user.id:
+        is_liked = [shot.like_users.filter(pk=request.user.id).exists() for shot in shots]
         
     serializer = ShotListSerializer(shots, many=True)
     data = {
@@ -52,14 +59,27 @@ def shots(request, page):
     return Response(data)
 
 
-@api_view(['GET', 'PUT', 'DELETE'])
-def shot_detail_or_update_or_delete(request, shot_id):
+
+@api_view(['GET'])
+def shot_detail(request, shot_id):
     '''
-    shot_detail_or_update_or_delete
+    shot_detail
 
     ---
     [GET] 
+    '''
+    shot = get_object_or_404(Shot, pk=shot_id)
+    serializer = ShotSerializer(shot)
+    return Response(serializer.data)
 
+
+@api_view(['PUT', 'DELETE'])
+@permission_classes([IsAuthenticated])
+def shot_update_or_delete(request, shot_id):
+    '''
+    shot_update_or_delete
+
+    ---
     [PUT] 
     - title
     - content
@@ -71,10 +91,6 @@ def shot_detail_or_update_or_delete(request, shot_id):
     - image (수정시에도 image 넣어줘야함) 
     '''
     shot = get_object_or_404(Shot, pk=shot_id)
-
-    def shot_detail():
-        serializer = ShotSerializer(shot)
-        return Response(serializer.data)
 
     def shot_update():
         if request.user == shot.user:
@@ -88,15 +104,14 @@ def shot_detail_or_update_or_delete(request, shot_id):
             shot.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
 
-    if request.method == 'GET':
-        return shot_detail()
-    elif request.method == 'PUT':
+    if request.method == 'PUT':
         return shot_update()
     elif request.method == 'DELETE':
         return shot_delete()
 
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def shot_likes(request, shot_id):
     '''
     shot_likes
@@ -121,6 +136,7 @@ def shot_likes(request, shot_id):
 
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def shot_comment_create(request, shot_id):
     '''
     shot_comment_create
@@ -138,6 +154,7 @@ def shot_comment_create(request, shot_id):
 
 
 @api_view(['PUT', 'DELETE'])
+@permission_classes([IsAuthenticated])
 def shot_comment_update_or_delete(request, shot_id, comment_id):
     '''
     shot_comment_update_or_delete
