@@ -1,9 +1,9 @@
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_list_or_404, get_object_or_404
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from rest_framework import status
-from .serailizers import MovieListSerializer, MovieSerializer, MovieCommentSerializer, StarSerializer
-from .models import Movie, MovieComment, StarRating
+from .serailizers import GenreSerializer, MovieListSerializer, MovieSerializer, MovieCommentSerializer, StarSerializer
+from .models import Movie, MovieComment, StarRating, Genre
 from django.db.models import Count
 import random
 
@@ -14,6 +14,19 @@ import random
 # dump_movie_data.get_movie_data()
 
 MOVIE_NUM = 10
+
+
+@api_view(['GET'])
+def genre(request):
+    '''
+    genre
+
+    ---
+    [GET]
+    '''
+    genres = get_list_or_404(Genre)
+    serializer = GenreSerializer(genres, many=True)
+    return Response(serializer.data)
 
 @api_view(['GET'])
 def movie_trailer(request):
