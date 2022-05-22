@@ -125,14 +125,14 @@ def movies(request, page):
     today = dt.datetime.now()
     start = today - dt.timedelta(30)
     end = today + dt.timedelta(30)
-    movies = Movie.objects.all().order_by('vote_average', '-release_date')\
+    movies = Movie.objects.all().order_by('-vote_average', '-release_date')\
         .filter(release_date__range=(start, end))
     max_page = round(len(movies)/MOVIE_NUM)
 
     movies = movies[page*MOVIE_NUM:page*MOVIE_NUM+MOVIE_NUM]
     serializer = MovieListSerializer(movies, many=True)
     data = {
-        "max_page"  : max_page,
+        "max_page"  : max_page, 
         "movies"    : serializer.data,
     }
     return Response(data)
