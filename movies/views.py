@@ -111,6 +111,34 @@ def now_playing(request, page):
 
 
 @api_view(['GET'])
+def movies(request, page):
+    '''
+    movies
+
+    ---
+    - order_by('vote_average', '-release_date')
+
+    페이지 번호에 따라 평점이 높은 순으로 최신 상영작 20개씩 반환하는 API
+    
+    max_page를 넘어가는 값을 page 로 주면 빈 리스트를 반환합니다.
+    '''
+    today = dt.datetime.now()
+    start = today - dt.timedelta(30)
+    end = today + dt.timedelta(30)
+    movies = Movie.objects.all().order_by('-vote_average', '-release_date')\
+        .filter(release_date__range=(start, end))
+    max_page = round(len(movies)/MOVIE_NUM)
+
+    movies = movies[page*MOVIE_NUM:page*MOVIE_NUM+MOVIE_NUM]
+    serializer = MovieListSerializer(movies, many=True)
+    data = {
+        "max_page"  : max_page, 
+        "movies"    : serializer.data,
+    }
+    return Response(data)
+
+
+@api_view(['GET'])
 def movie_detail(request, movie_id):
     '''
     movie_detail
