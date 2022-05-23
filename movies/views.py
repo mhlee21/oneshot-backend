@@ -6,13 +6,18 @@ from rest_framework import status
 from .serailizers import GenreSerializer, MovieListSerializer, MovieSerializer, MovieCommentSerializer, StarSerializer
 from .models import Movie, MovieComment, StarRating, Genre
 from django.db.models import Count
+####################################
+# 영화 추천 알고리즘을 위해 사용되는 모듈
 import random
 import datetime as dt
+####################################
 
-# TMDB 로부터 movie data 가져올 때 사용하는 함수
-# python manage.py migrate 후 다음 함수 실행되어야 에러가 나지 않는다.
+####################################
+## TMDB 로부터 movie data 가져올 때 사용하는 함수
+## python manage.py migrate 후 다음 함수 실행되어야 에러가 나지 않는다.
 # from . import dump_movie_data
 # dump_movie_data.get_movie_data()
+####################################
 
 MOVIE_NUM = 12
 
@@ -23,6 +28,7 @@ def genre(request):
 
     ---
     [GET]
+
     '''
     genres = get_list_or_404(Genre)
     serializer = GenreSerializer(genres, many=True)
@@ -36,6 +42,7 @@ def movie_trailer(request):
 
     ---
     최신 상영작 중 랜덤한 movie_trailer 를 리턴하는 API
+
     '''
     today = dt.datetime.now()
     start = today - dt.timedelta(30)
@@ -67,6 +74,7 @@ def movie_popular(request, page):
     페이지 번호에 따라 인기영화 상위 20개씩 반환하는 API
     
     max_page를 넘어가는 값을 page 로 주면 빈 리스트를 반환합니다.
+
     '''
     movies = Movie.objects.all().order_by('-popularity')
     max_page = round(len(movies)/MOVIE_NUM)
@@ -92,6 +100,7 @@ def now_playing(request, page):
     페이지 번호에 따라 최신 상영작 20개씩 반환하는 API
     
     max_page를 넘어가는 값을 page 로 주면 빈 리스트를 반환합니다.
+
     '''
     today = dt.datetime.now()
     start = today - dt.timedelta(30)
@@ -108,6 +117,53 @@ def now_playing(request, page):
         "movies"    : serializer.data,
     }
     return Response(data)
+
+
+@api_view(['GET'])
+def my_movies(request):
+    '''
+    my_movies
+
+    ---
+
+    '''
+    data = {
+        'result': ""
+    }
+    return Response(data)
+
+
+@api_view(['GET'])
+def shotest(request):
+    '''
+    shotest
+
+    ---
+    shot의 movie_char 데이터를 기반으로 영화 추천
+
+    '''
+    # DB에서 영화 데이터 가져오기
+    movies = Movie.objects.all().order_by('-popularity')
+    movies = movies.filter(overview__contains='', poster_path__contains='', backdrop_path__contains='')
+    # print(len(movies)) # 3292개
+
+    # shot이 있는 영화데이터를 추출
+    shotest = movies.exclude(shot=None)
+
+    # 전체 길이가 MOVIE_NUM 넘지 않는 경우 추가 데이터(인기순)를 뒤에 붙이기
+    end = 0
+    while len(shotest) < MOVIE_NUM:
+        num = MOVIE_NUM - len(shotest)
+        tmp_list = movies[end:end+num]
+        shotest |= tmp_list
+        end += num
+
+    # 합친 쿼리셋을 shot 개수로 내림차순 정렬
+    shotest = shotest.annotate(shot_count=Count('shot')).order_by('-shot_count')
+    
+    # serializer 반환
+    serializer = MovieListSerializer(shotest, many=True)
+    return Response(serializer.data)
 
 
 @api_view(['GET'])
@@ -148,6 +204,7 @@ def movie_detail(request, movie_id):
 
     * stars: 현재 접속중인 유저의 별점 평가 내역 있으면 같이 리턴, 없으면 ''를 리턴
     * movie : 영화 상세 정보
+
     '''
     movie = get_object_or_404(Movie, pk=movie_id)
 
@@ -192,6 +249,7 @@ def movie_likes(request, movie_id):
 
     ---
     [POST]
+
     '''
     movie = get_object_or_404(Movie, pk=movie_id)
     if movie.like_users.filter(pk=request.user.pk).exists():
@@ -216,6 +274,7 @@ def movie_comment_create(request, movie_id):
 
     ---
     [POST]
+
     '''
     movie = get_object_or_404(Movie, pk=movie_id)
     serializer = MovieCommentSerializer(data=request.data)
@@ -237,6 +296,7 @@ def movie_update_or_delete(request, movie_id, comment_id):
     * content
 
     [DELETE]
+
     '''
     comment = get_object_or_404(MovieComment, pk=comment_id)
     
@@ -274,6 +334,7 @@ def movie_star_rating(request, movie_id):
     [DELETE]
     
     * 별점 삭제
+
     '''
     movie = get_object_or_404(Movie, pk=movie_id)
 

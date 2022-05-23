@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from .models import Movie, Genre, MovieComment, StarRating, Video
 from django.contrib.auth import get_user_model
+from shots.serializers.shot import ShotListSerializer
 User = get_user_model()
 
 
@@ -18,10 +19,12 @@ class VideoSerializer(serializers.ModelSerializer):
 
 class MovieListSerializer(serializers.ModelSerializer):
     genres = GenreSerializer(read_only=True, many=True)
-
+    shot_cnt = serializers.IntegerField(source='shot_set.count', read_only=True)
     class Meta:
         model = Movie
-        fields = ('pk','title','release_date','adult','popularity','poster_path','genres','vote_average','vote_count')
+        fields = ('pk','title','release_date','adult','popularity',
+                'poster_path','genres','vote_average','vote_count',
+                'shot_cnt')
 
 
 class UserSerializer(serializers.ModelSerializer):
