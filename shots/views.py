@@ -76,8 +76,21 @@ def shot_detail(request, shot_id):
     [GET] 
     '''
     shot = get_object_or_404(Shot, pk=shot_id)
+    
+    is_liked = False
+    # AnonymousUser 에러 해결을 위해 
+    # request.user.id 값이 있는지 없는지를 검사
+    # AnonymousUser 일때 id 값이 None 이기 때문에 TypeError 발생
+    if request.user.id:
+        is_liked = shot.like_users.filter(pk=request.user.id).exists()
+
     serializer = ShotSerializer(shot)
-    return Response(serializer.data)
+    
+    data = {
+        'is_liked' : is_liked,
+        'shot' : serializer.data,
+    }
+    return Response(data)
 
 
 @api_view(['PUT', 'DELETE'])
