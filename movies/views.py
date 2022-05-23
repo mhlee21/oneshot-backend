@@ -1,3 +1,4 @@
+from http.client import ResponseNotReady
 from django.shortcuts import get_list_or_404, get_object_or_404
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
@@ -245,6 +246,86 @@ def shotest(request):
     # serializer 반환
     serializer = MovieListSerializer(shotest, many=True)
     return Response(serializer.data)
+
+
+@api_view(['GET'])
+def search(request, page):
+    '''
+    search
+
+    ---
+
+    쿼리문을 통해 검색한 영화를 리턴하는 API
+    {
+        'title':'',
+        'genre': ['액션', '애니메이션', '드라마'],
+        'release_date_start': "2022-05-16",
+        'release_date_end': "2022-05-16",
+        'vote_average_start': 0,
+        'vote_average_end': 0,
+    }
+
+    '''
+    def get_value(request, key, default):
+        # 쿼리스트링의 value 리턴
+        if key in request.GET:
+            return request.GET[key]
+        else:
+            return default
+    
+    ### 필터링 할 영화 데이터 가져오기 ###
+    movies = Movie.objects.all()
+
+    # 제목으로 검색한 경우
+    title = get_value(request, 'title', '')
+    if title:
+        searched = movies.filter(title__contains=title)
+
+    # 제목이 아닌 다른 항목으로 검색한 경우
+    else:
+        searched = Movie.objects.none()   # 리턴을 위한 빈 쿼리셋 선언
+
+        #### 장르 ####
+        genres = get_value(request, 'genre', [])
+        if genres:
+            genres = genres.strip('[').strip(']')\
+                            .replace('"','').replace("'",'')\
+                            .split(',')
+            genres = [genre.strip() for genre in genres]
+            for genre in genres:
+                g = Genre.objects.get(name=genre)
+                searched |= movies.filter(genres=g)
+        
+        #### 개봉일 ####
+        release_date_start = get_value(request, 'release_date_start', '').strip('"')
+        release_date_end = get_value(request, 'release_date_end', '').strip('"')
+        if release_date_start and release_date_end\
+            and release_date_start <= release_date_end:
+            searched |= movies.filter(
+                release_date__range=(release_date_start, release_date_end)
+            )
+            
+        #### 평점 ####
+        vote_average_start = get_value(request, 'vote_average_start', 0)
+        vote_average_end = get_value(request, 'vote_average_end', 0)
+        if vote_average_start and vote_average_end\
+            and vote_average_start <= vote_average_end:
+            searched |= movies.filter(
+                vote_average__range=(vote_average_start, vote_average_end)
+            )
+
+    # 쿼리셋을 인기순으로 정렬
+    searched = searched.order_by('-popularity')
+
+    # 결과 전송을 위한 serializer
+    max_page = round(len(searched)/MOVIE_NUM)
+    searched = searched[page*MOVIE_NUM:page*MOVIE_NUM+MOVIE_NUM]
+    serializer = MovieListSerializer(searched, many=True)
+    data = {
+        "max_page"  : max_page,
+        "movies"    : serializer.data,
+    }
+    return Response(data)
 
 
 @api_view(['GET'])
