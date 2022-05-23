@@ -25,6 +25,10 @@ def shot_create(request):
     * content
     * movie_char
     * image
+
+    이미지 업로드 관련해서 참고한 블로그
+    https://dongyeopgu.github.io/django/django_image_upload.html
+
     '''
     serializer = ShotSerializer(data=request.data)
     if serializer.is_valid(raise_exception=True):
@@ -44,6 +48,7 @@ def shots(request, page):
 
     ---
     [GET] get shots
+
     '''
     shots = Shot.objects.all().annotate(like_cnt=Count('like_users')).order_by('-pk')
     max_page = round(len(shots)/20)
@@ -74,6 +79,7 @@ def shot_detail(request, shot_id):
 
     ---
     [GET] 
+
     '''
     shot = get_object_or_404(Shot, pk=shot_id)
     
@@ -109,6 +115,7 @@ def shot_update_or_delete(request, shot_id):
     - title
     -content
     - image (수정시에도 image 넣어줘야함) 
+
     '''
     shot = get_object_or_404(Shot, pk=shot_id)
 
@@ -121,6 +128,8 @@ def shot_update_or_delete(request, shot_id):
 
     def shot_delete():
         if request.user == shot.user:
+            # image = request.FILES['files']
+            # print(image)
             shot.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -140,6 +149,7 @@ def shot_likes(request, shot_id):
     [POST]
 
     return { "is_like": true, "like_cnt": 1 }
+
     '''
     shot = get_object_or_404(Shot, pk=shot_id)
     if shot.like_users.filter(pk=request.user.pk).exists():
@@ -164,6 +174,7 @@ def shot_comment_create(request, shot_id):
     ---
     [POST]
     * content
+
     '''
     shot = get_object_or_404(Shot, pk=shot_id)
     serializer = ShotCommentSerializer(data=request.data)
@@ -184,6 +195,7 @@ def shot_comment_update_or_delete(request, shot_id, comment_id):
     * content
 
     [DELETE]
+
     '''
     comment = get_object_or_404(ShotComment, pk=comment_id)
     
