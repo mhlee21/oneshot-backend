@@ -3,8 +3,15 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
-from .serailizers import GenreSerializer, MovieListSerializer, MovieSerializer, MovieCommentSerializer, StarSerializer
+from .serailizers import (
+    GenreSerializer, 
+    MovieListSerializer, 
+    MovieSerializer, 
+    MovieCommentSerializer, 
+    StarSerializer
+)
 from .models import Movie, MovieComment, StarRating, Genre
+from accounts.models import User
 from django.db.models import Count
 ####################################
 # 영화 추천 알고리즘을 위해 사용되는 모듈
@@ -120,15 +127,77 @@ def now_playing(request, page):
 
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def my_movies(request):
     '''
     my_movies
 
     ---
 
+    로그인 시 유저의 평점 정보 기반으로 영화 추천
+    * 장르 키워드로 임의의 영화 12개
+    * release_date 임의로 조절
+    * 평점 순으로 정렬
+    * vote_count가 100 이상
     '''
+    # 현재 유저의 객체 가져오기
+    from accounts.serializers import UserStarSerializer
+    user = get_object_or_404(User, pk=request.user.pk)
+    serializer = UserStarSerializer(user)
+
+    genres = Genre.objects.all().values_list()
+    genres_cnt = {genre[1]:0 for genre in genres}
+    
+    for movie in serializer.data['starrating_set']:
+        star = int(movie['star'])
+        # print(f'{star}점')
+        for genre in movie['movie']['genres']:
+            id, name = list(genre.values())
+            genres_cnt[name] += star
+    # print(genres_cnt)
+
+    gscore = sorted(genres_cnt.items(), key=lambda x:x[1], reverse=True)
+
+    top3 = list(g[0] for g in gscore[:3])
+
+
+
+    # DB에서 영화 데이터 가져오기
+    today = dt.datetime.now()
+    start = today - dt.timedelta(days=3000)
+    end = today + dt.timedelta(300)
+    movies = Movie.objects.all().order_by('-vote_average')
+    movies = movies.filter(
+        overview__contains='', 
+        poster_path__contains='', 
+        backdrop_path__contains='',
+        vote_count__gt=100,
+        release_date__range=(start, end)
+        )
+    # print(len(movies)) # 3292개
+
+    my_movie = Movie.objects.none()
+    for gen in top3:
+        g = Genre.objects.get(name=gen)
+        gen_movies = movies.filter(genres=g)[:MOVIE_NUM/len(top3)]
+        my_movie |= gen_movies
+
+    
+
+    # 전체 길이가 MOVIE_NUM 넘지 않는 경우 추가 데이터(평점순)를 뒤에 붙이기
+    end = 0
+    while len(my_movie) < MOVIE_NUM:
+        num = MOVIE_NUM - len(my_movie)
+        tmp_list = movies[end:end+num]
+        my_movie |= tmp_list
+        end += num
+    print(len(my_movie))
+
+    serializer = MovieListSerializer(my_movie, many=True)
+
     data = {
-        'result': ""
+        'genre' : top3,
+        'result': serializer.data,
     }
     return Response(data)
 
@@ -144,13 +213,25 @@ def shotest(request):
     '''
     # DB에서 영화 데이터 가져오기
     movies = Movie.objects.all().order_by('-popularity')
-    movies = movies.filter(overview__contains='', poster_path__contains='', backdrop_path__contains='')
+    movies = movies.filter(
+        overview__contains='', 
+        poster_path__contains='', 
+        backdrop_path__contains=''
+        )
     # print(len(movies)) # 3292개
 
     # shot이 있는 영화데이터를 추출
     shotest = movies.exclude(shot=None)
 
     # 전체 길이가 MOVIE_NUM 넘지 않는 경우 추가 데이터(인기순)를 뒤에 붙이기
+    today = dt.datetime.now()
+    start = today - dt.timedelta(days=3000)
+    end = today + dt.timedelta(300)
+    movies = movies.filter( # 추천을 위한 영화 필터링
+        vote_count__gt=100,
+        release_date__range=(start, end)
+    )
+
     end = 0
     while len(shotest) < MOVIE_NUM:
         num = MOVIE_NUM - len(shotest)

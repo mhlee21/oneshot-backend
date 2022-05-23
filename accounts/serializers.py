@@ -3,12 +3,19 @@ from django.contrib.auth import get_user_model
 from movies.serailizers import MovieSerializer
 from .models import User
 from shots.serializers.shot import ShotSerializer
-
+from movies.serailizers import StarSerializer, MovieSerializer
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ('pk', 'username')
+
+
+class UserStarSerializer(serializers.ModelSerializer):
+    starrating_set = StarSerializer(read_only=True, many=True)
+    class Meta:
+        model = User
+        fields = ('pk', 'username', 'starrating_set')
 
 
 class ProfileSerializer(serializers.ModelSerializer):

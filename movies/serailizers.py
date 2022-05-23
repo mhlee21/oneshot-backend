@@ -44,12 +44,20 @@ class MovieCommentSerializer(serializers.ModelSerializer):
 
 
 class StarSerializer(serializers.ModelSerializer):
+    #####################################################
+    # my_movies API 에서 보여주기 위한 영화 정보
+    #####################################################
+    class MovieSerializer(serializers.ModelSerializer):
+        genres = GenreSerializer(read_only=True, many=True)
+        class Meta:
+            model = Movie
+            fields = ('pk','title', 'genres', 'poster_path')
+
+    movie = MovieSerializer(read_only=True)
     user = UserSerializer(read_only=True)
-    
     class Meta:
         model = StarRating
         fields = '__all__'
-        read_only_fields = ('movie',)
 
 
 class MovieSerializer(serializers.ModelSerializer):    
