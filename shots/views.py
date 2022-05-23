@@ -4,6 +4,8 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
+
+from movies.serailizers import MovieSerializer
 from .models import Shot, ShotComment
 from movies.models import Movie
 from .serializers.shot import ShotSerializer, ShotListSerializer
@@ -26,7 +28,12 @@ def shot_create(request):
     '''
     serializer = ShotSerializer(data=request.data)
     if serializer.is_valid(raise_exception=True):
-        serializer.save(user=request.user)
+        title = request.data['movie_char']
+        if Movie.objects.all().filter(title__exact=title).exists():
+            movie = Movie.objects.get(title=title)
+            serializer.save(user=request.user, movie=movie)
+        else:
+            serializer.save(user=request.user)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
