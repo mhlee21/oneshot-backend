@@ -4,8 +4,6 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
-
-from movies.serailizers import MovieSerializer
 from .models import Shot, ShotComment
 from movies.models import Movie
 from .serializers.shot import ShotSerializer, ShotListSerializer
@@ -25,9 +23,6 @@ def shot_create(request):
     * content
     * movie_char
     * image
-
-    이미지 업로드 관련해서 참고한 블로그
-    https://dongyeopgu.github.io/django/django_image_upload.html
 
     '''
     serializer = ShotSerializer(data=request.data)
@@ -128,8 +123,6 @@ def shot_update_or_delete(request, shot_id):
 
     def shot_delete():
         if request.user == shot.user:
-            # image = request.FILES['files']
-            # print(image)
             shot.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
 
