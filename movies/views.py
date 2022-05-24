@@ -274,48 +274,64 @@ def search(request, page):
             return default
     
     ### 필터링 할 영화 데이터 가져오기 ###
-    movies = Movie.objects.all()
+    searched = Movie.objects.all()
 
-    # 제목으로 검색한 경우
+    #### 제목 ####
     title = get_value(request, 'title', '')
     if title:
-        searched = movies.filter(title__contains=title)
+        searched &= searched.filter(
+            title__contains=title
+        )
+        # print('title: ',len(searched),title)
 
-    # 제목이 아닌 다른 항목으로 검색한 경우
-    else:
-        searched = Movie.objects.none()   # 리턴을 위한 빈 쿼리셋 선언
 
-        #### 장르 ####
-        genres = get_value(request, 'genre', [])
-        if genres:
-            genres = genres.strip('[').strip(']')\
-                            .replace('"','').replace("'",'')\
-                            .split(',')
-            genres = [genre.strip() for genre in genres]
-            for genre in genres:
-                g = Genre.objects.get(name=genre)
-                searched |= movies.filter(genres=g)
-        
-        #### 개봉일 ####
-        release_date_start = get_value(request, 'release_date_start', '').strip('"')
-        release_date_end = get_value(request, 'release_date_end', '').strip('"')
-        if release_date_start and release_date_end\
-            and release_date_start <= release_date_end:
-            searched |= movies.filter(
-                release_date__range=(release_date_start, release_date_end)
-            )
-            
-        #### 평점 ####
-        vote_average_start = get_value(request, 'vote_average_start', 0)
-        vote_average_end = get_value(request, 'vote_average_end', 0)
-        if vote_average_start and vote_average_end\
-            and vote_average_start <= vote_average_end:
-            searched |= movies.filter(
-                vote_average__range=(vote_average_start, vote_average_end)
-            )
+    #### 장르 ####
+    genres = get_value(request, 'genre', [])
+    if genres:
+        genres = genres.strip('[').strip(']')\
+                        .replace('"','').replace("'",'')\
+                        .split(',')
+        genres = [genre.strip() for genre in genres]
+
+        for genre in genres:
+            g = Genre.objects.get(name=genre)
+            searched &= searched.filter(genres=g)
+            print(len(searched.filter(genres=g)))
+        # print('genres: ',len(searched),genres)
+
+
+    #### 개봉일 ####
+    release_date_start = get_value(request, 'release_date_start', '').strip('"')
+    release_date_end = get_value(request, 'release_date_end', '').strip('"')
+    if release_date_start and release_date_end:
+        searched &= searched.filter(
+            release_date__range=(release_date_start, release_date_end)
+        )
+        # print('release_date: ',len(searched),release_date_start,release_date_end)
+
+
+    #### 평점 ####
+    vote_average_start = get_value(request, 'vote_average_start', 0)
+    vote_average_end = get_value(request, 'vote_average_end', 0)
+    if vote_average_start and vote_average_end:
+        searched &= searched.filter(
+            vote_average__range=(vote_average_start, vote_average_end)
+        )
+        # print('vote_average: ',len(searched),vote_average_start,vote_average_end)
+
+    # 쿼리스트링이 없는 경우 (검색하기 전인 경우) 
+    if not title and not genres\
+        and (not release_date_start or not release_date_start)\
+        and (not vote_average_start or not vote_average_end):
+        searched &= searched.filter(
+            vote_count__gt=100
+        )
+        # print('no query: ',len(searched))
+
 
     # 쿼리셋을 인기순으로 정렬
-    searched = searched.order_by('-popularity')
+    searched = searched.order_by('-popularity', '-release_date', '-vote_average')
+
 
     # 결과 전송을 위한 serializer
     max_page = round(len(searched)/MOVIE_NUM)
