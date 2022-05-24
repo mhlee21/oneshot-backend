@@ -5,6 +5,7 @@ from .models import User
 from shots.serializers.shot import ShotSerializer
 from movies.serailizers import StarSerializer, MovieSerializer
 
+
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User

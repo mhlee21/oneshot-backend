@@ -1,4 +1,5 @@
 from http.client import ResponseNotReady
+from types import GetSetDescriptorType
 from django.shortcuts import get_list_or_404, get_object_or_404
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
@@ -161,17 +162,14 @@ def my_movies(request):
             genres_cnt[name] += star
     # print(genres_cnt)
 
-    gscore = sorted(genres_cnt.items(), key=lambda x:x[1], reverse=True)
-
-    top3 = list(g[0] for g in gscore[:3])
-
-
-
     # DB에서 영화 데이터 가져오기
     today = dt.datetime.now()
     start = today - dt.timedelta(days=3000)
     end = today + dt.timedelta(300)
-    movies = Movie.objects.all().order_by('-vote_average')
+    movies = Movie.objects.all().order_by(
+        '-vote_count',
+        '-vote_average'
+    )
     movies = movies.exclude(
             poster_path__exact=''
         ).filter(
@@ -180,13 +178,17 @@ def my_movies(request):
         )
     # print(len(movies)) # 3292개
 
+    gscore = sorted(genres_cnt.items(), key=lambda x:x[1], reverse=True)
     my_movie = Movie.objects.none()
-    for gen in top3:
-        g = Genre.objects.get(name=gen)
-        gen_movies = movies.filter(genres=g)[:MOVIE_NUM/len(top3)]
-        my_movie |= gen_movies
-
-    
+    # print('---',gscore[0][1])
+    if gscore[0][1]:
+        top3 = list(g[0] for g in gscore[:3])
+        for gen in top3:
+            g = Genre.objects.get(name=gen)
+            gen_movies = movies.filter(genres=g)[:MOVIE_NUM/len(top3)]
+            my_movie |= gen_movies
+    else:
+        top3 = []
 
     # 전체 길이가 MOVIE_NUM 넘지 않는 경우 추가 데이터(평점순)를 뒤에 붙이기
     end = 0
@@ -407,15 +409,18 @@ def movie_detail(request, movie_id):
             is_liked = True
 
     # 영화 포스터/트레일러 url
+    have_trailer = False
     url_path = ''
     if movie.video.values(): 
         key = list(movie.video.values())[0]['key']
         url_path = f'https://www.youtube.com/embed/{key}'
+        have_trailer = True
     else:
         url_path = f'https://image.tmdb.org/t/p/original{movie.poster_path}'
     
     serializer = MovieSerializer(movie)
     data = {
+        "have_trailer" : have_trailer,
         "url_path" : url_path,
         "is_liked" : is_liked,
         "stars" : stars,
