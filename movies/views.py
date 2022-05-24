@@ -113,8 +113,12 @@ def now_playing(request, page):
     today = dt.datetime.now()
     start = today - dt.timedelta(30)
     end = today + dt.timedelta(30)
-    movies = Movie.objects.all().order_by('-release_date')\
-        .filter(release_date__range=(start, end))
+    movies = Movie.objects.all()\
+        .filter(
+            release_date__range=(start, end)
+        ).exclude(
+            poster_path__exact='',
+        ).order_by('-release_date')
     max_page = round(len(movies)/MOVIE_NUM)
 
     movies = movies[page*MOVIE_NUM:page*MOVIE_NUM+MOVIE_NUM]
@@ -168,12 +172,11 @@ def my_movies(request):
     start = today - dt.timedelta(days=3000)
     end = today + dt.timedelta(300)
     movies = Movie.objects.all().order_by('-vote_average')
-    movies = movies.filter(
-        overview__contains='', 
-        poster_path__contains='', 
-        backdrop_path__contains='',
-        vote_count__gt=100,
-        release_date__range=(start, end)
+    movies = movies.exclude(
+            poster_path__exact=''
+        ).filter(
+            vote_count__gt=100,
+            release_date__range=(start, end)
         )
     # print(len(movies)) # 3292개
 
@@ -214,11 +217,9 @@ def shotest(request):
     '''
     # DB에서 영화 데이터 가져오기
     movies = Movie.objects.all().order_by('-popularity')
-    movies = movies.filter(
-        overview__contains='', 
-        poster_path__contains='', 
-        backdrop_path__contains=''
-        )
+    movies = movies.exclude(
+        poster_path__exact=''
+    )
     # print(len(movies)) # 3292개
 
     # shot이 있는 영화데이터를 추출
@@ -274,7 +275,11 @@ def search(request, page):
             return default
     
     ### 필터링 할 영화 데이터 가져오기 ###
-    searched = Movie.objects.all()
+    searched = Movie.objects.all().exclude(
+        overview__exact='', 
+        poster_path__exact='', 
+        backdrop_path__exact=''
+    )
 
     #### 제목 ####
     title = get_value(request, 'title', '')
