@@ -45,6 +45,23 @@ def genre(request):
 
 
 @api_view(['GET'])
+def movie_title(request):
+    '''
+    movie_title
+
+    ---
+    
+    '''
+    movies = Movie.objects.all()
+    movie_title = list(title[0] for title in movies.values_list('title'))
+    data = {
+        'movie_title': movie_title,
+    }
+    return Response(data)
+
+
+
+@api_view(['GET'])
 def movie_trailer(request):
     '''
     movie_trailer
